@@ -1,7 +1,8 @@
 
 import os
-import telebot
 import logging
+
+import telebot
 
 
 logging.basicConfig(level=logging.INFO)

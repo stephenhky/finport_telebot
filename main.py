@@ -10,8 +10,12 @@ from finportbotutil.tipcalc import get_tipargparser, calculate_tips
 logging.basicConfig(level=logging.INFO)
 
 
+# Telebot API Key
 api_key = os.getenv('APIKEY')
 bot = telebot.TeleBot(api_key)
+
+# Tip Calculator API
+tipcalc_api_url = os.getenv('TIPCALCURL')
 
 
 @bot.message_handler(commands=['greet'])
@@ -44,7 +48,7 @@ def handling_tips_message(message):
         bot.send_message(message.chat.id, 'Wrong tip calculator arguments!')
         return
 
-    result = calculate_tips(args.subtotal, args.state, args.split)
+    result = calculate_tips(args.subtotal, args.state, args.split, tipcalc_api_url)
 
     response_text = """
     Subtotal: ${:.2f}

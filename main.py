@@ -5,7 +5,7 @@ import logging
 
 import telebot
 
-from finportbotutil.tipcalc import get_tipargparser
+from finportbotutil.tipcalc import get_tipargparser, calculate_tips
 
 logging.basicConfig(level=logging.INFO)
 
@@ -33,7 +33,7 @@ def sayonara(message):
 
 
 @bot.message_handler(regexp=r'([tT]ip[s]?)(\s+)([\d]+[\.]?[\d+]?)(\s+)([A-Za-z]+)(\s+\d+)?')
-def calculate_tips(message):
+def handling_tips_message(message):
     logging.info(message)
     msg_tokens = re.sub('\s+', ' ', message.text).split(' ')[1:]
     if len(msg_tokens) > 2:

@@ -5,7 +5,7 @@ import logging
 
 import telebot
 
-from .finportbotutil.tipcalc import get_tipargparser
+from finportbotutil.tipcalc import get_tipargparser
 
 logging.basicConfig(level=logging.INFO)
 

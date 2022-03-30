@@ -2,10 +2,14 @@
 import re
 import os
 import logging
+from datetime import date, datetime
+from dateutil.relativedelta import relativedelta
+import asyncio
 
 import telebot
 
 from finportbotutil.tipcalc import get_tipargparser, calculate_tips
+from finportbotutil.syminfo import get_symbol_inference
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,6 +20,9 @@ bot = telebot.TeleBot(api_key)
 
 # Tip Calculator API
 tipcalc_api_url = os.getenv('TIPCALCURL')
+
+# Stock inference API
+stockinfo_api_url = os.getenv('FININFO')
 
 
 @bot.message_handler(commands=['greet'])
@@ -50,16 +57,71 @@ def handling_tips_message(message):
 
     result = calculate_tips(args.subtotal, args.state, args.split, tipcalc_api_url)
 
-    response_text = """
-    Subtotal: ${:.2f}
-    State: {}
-    Tax: ${:.2f}
-    Subtotal + Tax: ${:.2f}
-    Tips: ${:.2f}
-    Total: ${:.2f}
-    Each person pays ${:.2f}
-    """.format(result['subtotal'], result['state'], result['tax'], result['subtotal']+result['tax'], result['tips'], result['total'], result['onesplit'])
+    response_text = ("Subtotal: ${:.2f}\n" + \
+        "State: {}\n" + \
+        "Tax: ${:.2f}\n" + \
+        "Subtotal + Tax: ${:.2f}\n" + \
+        "Tips: ${:.2f}\n" + \
+        "Total: ${:.2f}\n" + \
+        "Each person pays ${:.2f}"
+                     ).format(result['subtotal'], result['state'], result['tax'], result['subtotal']+result['tax'], result['tips'], result['total'], result['onesplit'])
     bot.send_message(message.chat.id, response_text)
+
+
+@bot.message_handler(commands=['stock'])
+def handling_stockinfo_message(message):
+    logging.info(message)
+    stringlists = re.sub('\s+', ' ', message.text).split(' ')[1:]
+    logging.info(stringlists)
+    if len(stringlists) <= 0:
+        bot.reply_to(message, 'No stock symbol provided.')
+
+    # find dates
+    finddates_ls = [
+        i
+        for i, item in enumerate(map(lambda s: re.match('\d\d\d\d-[01]\d-\d\d', s), stringlists))
+        if item is not None
+    ]
+    logging.info(finddates_ls)
+    if len(finddates_ls) == 0:
+        enddate = date.today().strftime('%Y-%m-%d')
+        startdate = (date.today() - relativedelta(months=3)).strftime('%Y-%m-%d')
+    elif len(finddates_ls) == 1:
+        enddate = date.today().strftime('%Y-%m-%d')
+        startdate = stringlists[finddates_ls[0]]
+        try:
+            datetime.strptime(startdate, '%Y-%m-%d')
+        except ValueError:
+            bot.reply_to(message, 'Invalid date: {}'.format(startdate))
+    else:
+        enddate = stringlists[finddates_ls[1]]
+        startdate = stringlists[finddates_ls[0]]
+        try:
+            datetime.strptime(startdate, '%Y-%m-%d')
+        except ValueError:
+            bot.reply_to(message, 'Invalid date: {}'.format(startdate))
+        try:
+            datetime.strptime(enddate, '%Y-%m-%d')
+        except ValueError:
+            bot.reply_to(message, 'Invalid date: {}'.format(enddate))
+
+    # find symbol
+    remaining_indices = sorted(list(set(range(len(stringlists))) - set(finddates_ls)))
+    logging.info(remaining_indices)
+    symbol = stringlists[remaining_indices[0]]   # take only the first string as symbols
+
+    # calculate
+    results = asyncio.run(get_symbol_inference(symbol, startdate, enddate, stockinfo_api_url))
+
+    # wrangle message
+    message_text = ("Symbol: {}\n" + \
+        "Yield rate: {:.4f}\n" + \
+        "Volatility: {:.4f}\n" + \
+        "Downside risk: {:.4f}\n" + \
+        "Upside risk: {:.4f}\n" + \
+        "Beta: {:.4f}\n").format(symbol, results['r'], results['vol'], results['downside_risk'], results['upside_risk'], results['beta'])
+
+    bot.reply_to(message, message_text)
 
 
 bot.polling()

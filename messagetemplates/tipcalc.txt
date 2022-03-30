@@ -1,0 +1,7 @@
+Subtotal: ${subtotal:.2f}
+State: {state}
+Tax: ${tax:.2f}
+Subtotal + Tax: ${pretotal:.2f}
+Tips: ${tips:.2f}
+Total: ${total:.2f}
+Each person pays ${indpay:.2f}

@@ -1,0 +1,7 @@
+Symbol: {symbol}
+Yield rate: {r:.4f}
+Volatility: {vol:.4f}
+Downside risk: {downside_risk:.4f}
+Upside risk: {upside_risk:.4f}
+Beta: {beta:.4f}
+(data from {data_startdate} to {data_enddate})

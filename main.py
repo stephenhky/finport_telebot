@@ -114,16 +114,19 @@ def handling_stockinfo_message(message):
     results = asyncio.run(get_symbol_inference(symbol, startdate, enddate, stockinfo_api_url))
 
     # wrangle message
-    message_text = open(os.path.join('messagetemplates', 'stockinfo.txt')).read().format(
-        symbol=symbol,
-        r=results['r'],
-        vol=results['vol'],
-        downside_risk=results['downside_risk'],
-        upside_risk=results['upside_risk'],
-        beta=results['beta'] if results['beta'] is not None else np.nan,
-        data_startdate=results['data_startdate'],
-        data_enddate=results['data_enddate']
-    )
+    if 'message' in results.keys() and results['message'] == 'Internal server error':
+        message_text = 'Unknown symbol: {}'.format(symbol)
+    else:
+        message_text = open(os.path.join('messagetemplates', 'stockinfo.txt')).read().format(
+            symbol=symbol,
+            r=results['r'],
+            vol=results['vol'],
+            downside_risk=results['downside_risk'],
+            upside_risk=results['upside_risk'],
+            beta=results['beta'] if results['beta'] is not None else np.nan,
+            data_startdate=results['data_startdate'],
+            data_enddate=results['data_enddate']
+        )
 
     bot.reply_to(message, message_text)
 

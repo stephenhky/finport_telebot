@@ -1,0 +1,5 @@
+{symbol1}: yield: {r1:.4f}, volatility: {vol1:.4f}
+{symbol2}: yield: {r2:.4f}, volatility: {vol2:.4f}
+Covariance: {cov:.4f}
+Correlation: {corr:.4f}
+(data from {data_startdate} to {data_enddate})

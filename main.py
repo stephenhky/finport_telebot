@@ -10,7 +10,7 @@ import numpy as np
 import telebot
 
 from finportbotutil.tipcalc import get_tipargparser, calculate_tips
-from finportbotutil.syminfo import get_symbol_inference
+from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation
 
 logging.basicConfig(level=logging.INFO)
 
@@ -24,6 +24,9 @@ tipcalc_api_url = os.getenv('TIPCALCURL')
 
 # Stock inference API
 stockinfo_api_url = os.getenv('FININFO')
+
+# Stock correlation API
+stockcorr_api_url = os.getenv('STOCKCORR')
 
 
 @bot.message_handler(commands=['greet'])
@@ -131,4 +134,70 @@ def handling_stockinfo_message(message):
     bot.reply_to(message, message_text)
 
 
+@bot.message_handler(commands=['stockcorr'])
+def handling_stockcorrelation_message(message):
+    logging.info(message)
+    stringlists = re.sub('\s+', ' ', message.text).split(' ')[1:]
+    if len(stringlists) <= 1:
+        bot.reply_to(message, 'Not enough stock symbols provided (at least 2).')
+
+    # find dates
+    finddates_ls = [
+        i
+        for i, item in enumerate(map(lambda s: re.match('\d\d\d\d-[01]\d-\d\d', s), stringlists))
+        if item is not None
+    ]
+    if len(finddates_ls) == 0:
+        enddate = date.today().strftime('%Y-%m-%d')
+        startdate = (date.today() - relativedelta(months=3)).strftime('%Y-%m-%d')
+    elif len(finddates_ls) == 1:
+        enddate = date.today().strftime('%Y-%m-%d')
+        startdate = stringlists[finddates_ls[0]]
+        try:
+            datetime.strptime(startdate, '%Y-%m-%d')
+        except ValueError:
+            bot.reply_to(message, 'Invalid date: {}'.format(startdate))
+    else:
+        enddate = stringlists[finddates_ls[1]]
+        startdate = stringlists[finddates_ls[0]]
+        try:
+            datetime.strptime(startdate, '%Y-%m-%d')
+        except ValueError:
+            bot.reply_to(message, 'Invalid date: {}'.format(startdate))
+        try:
+            datetime.strptime(enddate, '%Y-%m-%d')
+        except ValueError:
+            bot.reply_to(message, 'Invalid date: {}'.format(enddate))
+
+    # find symbol
+    remaining_indices = sorted(list(set(range(len(stringlists))) - set(finddates_ls)))
+    symbol1 = stringlists[remaining_indices[0]]
+    symbol1 = symbol1.upper()
+    symbol2 = stringlists[remaining_indices[1]]
+    symbol2 = symbol2.upper()
+
+    # calculate
+    results = asyncio.run(get_symbols_correlation(symbol1, symbol2, startdate, enddate, stockinfo_api_url))
+
+    # wrangle message
+    if 'message' in results.keys() and results['message'] == 'Internal server error':
+        message_text = 'Error'
+    else:
+        message_text = open(os.path.join('messagetemplates', 'stockcorr.txt')).read().format(
+            symbol1=symbol1,
+            r1=results['r1'],
+            vol1=results['std1'],
+            r2=results['r2'],
+            vol2=results['std2'],
+            cov=results['cov'],
+            corr=results['corr'],
+            data_startdate=results['data_startdate'],
+            data_enddate=results['data_enddate']
+        )
+
+    bot.reply_to(message, message_text)
+
+
 bot.polling()
+
+## Time out message: {    "message": "Endpoint request timed out"}

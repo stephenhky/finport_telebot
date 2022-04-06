@@ -187,6 +187,7 @@ def handling_stockcorrelation_message(message):
     else:
         message_text = open(os.path.join('messagetemplates', 'stockcorr.txt')).read().format(
             symbol1=symbol1,
+            symbol2=symbol2,
             r1=results['r1'],
             vol1=results['std1'],
             r2=results['r2'],

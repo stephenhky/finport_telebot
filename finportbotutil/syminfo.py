@@ -19,12 +19,12 @@ async def get_symbol_inference(symbol, startdate, enddate, api_url):
 
 
 async def get_symbols_correlation(symbol1, symbol2, startdate, enddate, api_url):
-    payload = {
+    payload = json.dumps({
         'symbol1': symbol1,
         'symbol2': symbol2,
         'startdate': startdate,
         'enddate': enddate
-    }
+    })
     headers = {
         'Content-Type': 'application/json'
     }

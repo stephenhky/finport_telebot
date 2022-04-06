@@ -192,7 +192,7 @@ def handling_stockcorrelation_message(message):
             r2=results['r2'],
             vol2=results['std2'],
             cov=results['cov'],
-            corr=results['corr'],
+            corr=results['correlation'],
             data_startdate=results['data_startdate'],
             data_enddate=results['data_enddate']
         )

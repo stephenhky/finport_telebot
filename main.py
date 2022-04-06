@@ -177,6 +177,7 @@ def handling_stockcorrelation_message(message):
     symbol2 = symbol2.upper()
 
     # calculate
+    print('{}, {} from {} to {}'.format(symbol1, symbol2, startdate, enddate))
     results = asyncio.run(get_symbols_correlation(symbol1, symbol2, startdate, enddate, stockinfo_api_url))
 
     # wrangle message

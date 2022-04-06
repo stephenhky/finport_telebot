@@ -178,7 +178,7 @@ def handling_stockcorrelation_message(message):
 
     # calculate
     print('{}, {} from {} to {}'.format(symbol1, symbol2, startdate, enddate))
-    results = asyncio.run(get_symbols_correlation(symbol1, symbol2, startdate, enddate, stockinfo_api_url))
+    results = asyncio.run(get_symbols_correlation(symbol1, symbol2, startdate, enddate, stockcorr_api_url))
 
     # wrangle message
     if 'message' in results.keys() and results['message'] == 'Internal server error':

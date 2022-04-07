@@ -47,7 +47,7 @@ def sayonara(message):
     bot.send_message(message.chat.id, "Have a nice day!")
 
 
-@bot.message_handler(regexp=r'([tT]ip[s]?)(\s+)([\d]+[\.]?[\d+]?)(\s+)([A-Za-z]+)(\s+\d+)?')
+@bot.message_handler(regexp=r'([tT]ip[s]?)(\s+)([\d]+[\.]?[\d]+?)(\s+)([A-Za-z]+)(\s+\d+)?')
 def handling_tips_message(message):
     logging.info(message)
     msg_tokens = re.sub('\s+', ' ', message.text).split(' ')[1:]

@@ -139,7 +139,7 @@ def handling_stockinfo_message(message):
     if splitted_message[0] == '/stockg':
         plot_info = asyncio.run(get_plots_infos(symbol, startdate, enddate, plotinfo_api_url))
         f = urllib.request.urlopen(plot_info['plot']['url'])
-        bot.send_photo(message.chat.id, f)
+        bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
 
 
 @bot.message_handler(commands=['stockcorr'])

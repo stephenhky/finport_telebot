@@ -5,12 +5,13 @@ import logging
 from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 import asyncio
+import urllib
 
 import numpy as np
 import telebot
 
 from finportbotutil.tipcalc import get_tipargparser, calculate_tips
-from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation
+from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation, get_plots_infos
 
 logging.basicConfig(level=logging.INFO)
 
@@ -24,6 +25,7 @@ tipcalc_api_url = os.getenv('TIPCALCURL')
 
 # Stock inference API
 stockinfo_api_url = os.getenv('FININFO')
+plotinfo_api_url = os.getenv('STOCKPLOT')
 
 # Stock correlation API
 stockcorr_api_url = os.getenv('STOCKCORR')
@@ -73,10 +75,11 @@ def handling_tips_message(message):
     bot.reply_to(message, response_text)
 
 
-@bot.message_handler(commands=['stock'])
+@bot.message_handler(commands=['stock', 'stockg'])
 def handling_stockinfo_message(message):
     logging.info(message)
-    stringlists = re.sub('\s+', ' ', message.text).split(' ')[1:]
+    splitted_message = re.sub('\s+', ' ', message.text).split(' ')
+    stringlists = splitted_message[1:]
     if len(stringlists) <= 0:
         bot.reply_to(message, 'No stock symbol provided.')
 
@@ -132,6 +135,11 @@ def handling_stockinfo_message(message):
         )
 
     bot.reply_to(message, message_text)
+
+    if splitted_message[0] == '/stockg':
+        plot_info = asyncio.run(get_plots_infos(symbol, startdate, enddate, plotinfo_api_url))
+        f = urllib.request.urlopen(plot_info['plot']['url'])
+        bot.send_photo(message.chat.id, f)
 
 
 @bot.message_handler(commands=['stockcorr'])

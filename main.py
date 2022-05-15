@@ -10,7 +10,7 @@ import urllib
 import numpy as np
 import telebot
 
-from finportbotutil.tipcalc import get_tipargparser, calculate_tips
+from finportbotutil.tipcalc import calculate_tips
 from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation, get_plots_infos
 
 logging.basicConfig(level=logging.INFO)
@@ -49,19 +49,39 @@ def sayonara(message):
     bot.send_message(message.chat.id, "Have a nice day!")
 
 
-@bot.message_handler(regexp=r'([tT]ip[s]?)(\s+)([\d]+[\.]?[\d]+?)(\s+)([A-Za-z]+)(\s+\d+)?')
-def handling_tips_message(message):
+@bot.message_handler(commands=['tips'])
+def handling_tips_command(message):
     logging.info(message)
-    msg_tokens = re.sub('\s+', ' ', message.text).split(' ')[1:]
-    if len(msg_tokens) > 2:
-        msg_tokens.insert(2, '--split')
-    try:
-        args = get_tipargparser().parse_args(msg_tokens)
-    except Exception:
-        bot.send_message(message.chat.id, 'Wrong tip calculator arguments!')
+    splitted_message = re.sub('\s+', ' ', message.text).split(' ')
+    stringlists = splitted_message[1:]
+    if len(stringlists) <= 0:
+        bot.reply_to(message, 'No information provided!')
         return
 
-    result = calculate_tips(args.subtotal, args.state, args.split, tipcalc_api_url)
+    try:
+        subtotal = float(stringlists[0])
+    except ValueError:
+        bot.reply_to(message, 'Invalid subtotal: {}'.format(stringlists[0]))
+        return
+
+    if len(stringlists) > 1:
+        state = stringlists[1].upper()
+        if state not in ['MD', 'VA', 'DC']:
+            bot.reply_to(message, 'Only MD, VA, and DC are supported.')
+            return
+    else:
+        state = 'MD'
+        bot.reply_to(message, 'Assumed in MD.')
+
+    if len(stringlists) > 2:
+        try:
+            split = int(stringlists[2])
+        except ValueError:
+            split = 1
+    else:
+        split = 1
+
+    result = calculate_tips(subtotal, state, split, tipcalc_api_url)
 
     response_text = open(os.path.join('messagetemplates', 'tipcalc.txt')).read().format(
         subtotal=result['subtotal'],

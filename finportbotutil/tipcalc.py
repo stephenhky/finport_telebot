@@ -1,16 +1,7 @@
 
 import json
-from argparse import ArgumentParser
 
 import requests
-
-
-def get_tipargparser():
-    tipparser = ArgumentParser(description='Tip Calculator')
-    tipparser.add_argument('subtotal', type=float)
-    tipparser.add_argument('state', type=str)
-    tipparser.add_argument('--split', type=int, default=1)
-    return tipparser
 
 
 def calculate_tips(

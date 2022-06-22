@@ -6,6 +6,7 @@ from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 import asyncio
 import urllib
+from dotenv import load_dotenv
 
 import numpy as np
 import telebot
@@ -15,6 +16,7 @@ from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation
 
 logging.basicConfig(level=logging.INFO)
 
+load_dotenv()
 
 # Telebot API Key
 api_key = os.getenv('APIKEY')

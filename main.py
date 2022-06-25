@@ -6,8 +6,8 @@ from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 import asyncio
 import urllib
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 import numpy as np
 import telebot
 

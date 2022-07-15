@@ -2,3 +2,4 @@ numpy
 pyTelegramBotAPI
 python-dateutil
 python-dotenv
+requests

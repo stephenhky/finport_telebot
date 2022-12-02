@@ -32,6 +32,9 @@ plotinfo_api_url = os.getenv('STOCKPLOT')
 # Stock correlation API
 stockcorr_api_url = os.getenv('STOCKCORR')
 
+# Search API
+search_api_url = os.getenv('SEARCH')
+
 
 @bot.message_handler(commands=['greet'])
 def greet(message):
@@ -229,6 +232,10 @@ def handling_stockcorrelation_message(message):
         )
 
     bot.reply_to(message, message_text)
+
+
+def handling_search(message):
+    pass
 
 
 bot.polling()

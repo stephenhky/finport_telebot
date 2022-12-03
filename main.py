@@ -238,6 +238,15 @@ def handling_search(message):
     pass
 
 
-bot.polling()
+def lambda_handler(event, context):
+    bot.polling()
+    return {
+        'statusCode': 200,
+        'body': 'Lambda executed'
+    }
+
+
+if __name__ == '__main__':
+    bot.polling()
 
 ## Time out message: {    "message": "Endpoint request timed out"}

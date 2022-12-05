@@ -41,30 +41,33 @@ modelloadretry = int(os.getenv('MODELLOADRETRY', 5))
 @bot.message_handler(commands=['greet'])
 def greet(message):
     logging.info(message)
+    print(message)
     bot.reply_to(message, 'Hey, how is it going?')
 
 
 @bot.message_handler(regexp='[Hh]ello*')
 def hello(message):
     logging.info(message)
+    print(message)
     bot.send_message(message.chat.id, "Hello!")
 
 
 @bot.message_handler(regexp='[Bb]ye[!]?')
 def sayonara(message):
     logging.info(message)
+    print(message)
     bot.send_message(message.chat.id, "Have a nice day!")
 
 
 @bot.message_handler(commands=['tips'])
 def handling_tips_command(message):
     logging.info(message)
+    print(message)
     splitted_message = re.sub('\s+', ' ', message.text).split(' ')
     stringlists = splitted_message[1:]
     if len(stringlists) <= 0:
         bot.reply_to(message, 'No information provided!')
         return
-
     try:
         subtotal = float(stringlists[0])
     except ValueError:
@@ -105,6 +108,7 @@ def handling_tips_command(message):
 @bot.message_handler(commands=['stock', 'stockg'])
 def handling_stockinfo_message(message):
     logging.info(message)
+    print(message)
     splitted_message = re.sub('\s+', ' ', message.text).split(' ')
     stringlists = splitted_message[1:]
     if len(stringlists) <= 0:
@@ -172,6 +176,7 @@ def handling_stockinfo_message(message):
 @bot.message_handler(commands=['stockcorr'])
 def handling_stockcorrelation_message(message):
     logging.info(message)
+    print(message)
     stringlists = re.sub('\s+', ' ', message.text).split(' ')[1:]
     if len(stringlists) <= 1:
         bot.reply_to(message, 'Not enough stock symbols provided (at least 2).')
@@ -239,7 +244,10 @@ def handling_stockcorrelation_message(message):
 @bot.message_handler(commands=['search'])
 def handling_search(message):
     logging.info(message)
-    querystring = message.text[6:]
+    print(message)
+    querystring = message.text[8:].strip()
+    logging.info('query string: {}'.format(querystring))
+    print('query string: {}'.format(querystring))
     for _ in range(modelloadretry):
         results = asyncio.run(search_symbols(querystring, search_api_url))
         if 'message' in results and 'timed out' in results['message']:

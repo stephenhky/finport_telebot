@@ -247,12 +247,17 @@ def handling_search(message):
         elif 'queryresults' in results:
             break
         else:
-            bot.reply_to(message, 'Uknown error; retrying...')
-    symbols = [
-        symbolprob['symbol']
-        for symbolprob in sorted(results['queryresults'], key=itemgetter('prob'), reverse=True)
-    ]
-    bot.reply_to(message, '\n'.join(symbols))
+            bot.reply_to(message, 'Unknown error; retrying...')
+    logging.info(results)
+    print(results)
+    if 'queryresults' not in results:
+        bot.reply_to(message, 'Unknown error.')
+    else:
+        symbols = [
+            symbolprob['symbol']
+            for symbolprob in sorted(results['queryresults'], key=itemgetter('prob'), reverse=True)
+        ]
+        bot.reply_to(message, '\n'.join(symbols))
 
 
 

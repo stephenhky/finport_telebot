@@ -6,13 +6,14 @@ from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 import asyncio
 import urllib
+from operator import itemgetter
 
 from dotenv import load_dotenv
 import numpy as np
 import telebot
 
 from finportbotutil.tipcalc import calculate_tips
-from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation, get_plots_infos
+from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation, get_plots_infos, search_symbols
 
 logging.basicConfig(level=logging.INFO)
 
@@ -34,6 +35,7 @@ stockcorr_api_url = os.getenv('STOCKCORR')
 
 # Search API
 search_api_url = os.getenv('SEARCH')
+modelloadretry = int(os.getenv('MODELLOADRETRY', 5))
 
 
 @bot.message_handler(commands=['greet'])
@@ -234,8 +236,24 @@ def handling_stockcorrelation_message(message):
     bot.reply_to(message, message_text)
 
 
+@bot.message_handler(commands=['search'])
 def handling_search(message):
-    pass
+    logging.info(message)
+    querystring = message.text[6:]
+    for _ in range(modelloadretry):
+        results = asyncio.run(search_symbols(querystring, search_api_url))
+        if 'message' in results and 'timed out' in results['message']:
+            bot.reply_to(message, 'Model loading...')
+        elif 'queryresults' in results:
+            break
+        else:
+            bot.reply_to(message, 'Uknown error; retrying...')
+    symbols = [
+        symbolprob['symbol']
+        for symbolprob in sorted(results['queryresults'], key=itemgetter('prob'), reverse=True)
+    ]
+    bot.reply_to(message, '\n'.join(symbols))
+
 
 
 def lambda_handler(event, context):

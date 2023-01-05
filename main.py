@@ -37,29 +37,38 @@ stockcorr_api_url = os.getenv('STOCKCORR')
 search_api_url = os.getenv('SEARCH')
 modelloadretry = int(os.getenv('MODELLOADRETRY', 5))
 
+# commands
+CMD_GREET = ['greet']
+RE_HELLO = '[Hh]ello*'
+RE_BYE = '[Bb]ye[!]?'
+CMD_TIPS = ['tips']
+CMD_STOCK = ['stock', 'stockg']
+CMD_STOCKCORR = ['stockcorr']
+CMD_SEARCH = ['search']
 
-@bot.message_handler(commands=['greet'])
+
+@bot.message_handler(commands=CMD_GREET)
 def greet(message):
     logging.info(message)
     print(message)
     bot.reply_to(message, 'Hey, how is it going?')
 
 
-@bot.message_handler(regexp='[Hh]ello*')
+@bot.message_handler(regexp=RE_HELLO)
 def hello(message):
     logging.info(message)
     print(message)
     bot.send_message(message.chat.id, "Hello!")
 
 
-@bot.message_handler(regexp='[Bb]ye[!]?')
+@bot.message_handler(regexp=RE_BYE)
 def sayonara(message):
     logging.info(message)
     print(message)
     bot.send_message(message.chat.id, "Have a nice day!")
 
 
-@bot.message_handler(commands=['tips'])
+@bot.message_handler(commands=CMD_TIPS)
 def handling_tips_command(message):
     logging.info(message)
     print(message)
@@ -105,7 +114,7 @@ def handling_tips_command(message):
     bot.reply_to(message, response_text)
 
 
-@bot.message_handler(commands=['stock', 'stockg'])
+@bot.message_handler(commands=CMD_STOCK)
 def handling_stockinfo_message(message):
     logging.info(message)
     print(message)
@@ -173,7 +182,7 @@ def handling_stockinfo_message(message):
         bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
 
 
-@bot.message_handler(commands=['stockcorr'])
+@bot.message_handler(commands=CMD_STOCKCORR)
 def handling_stockcorrelation_message(message):
     logging.info(message)
     print(message)
@@ -241,7 +250,7 @@ def handling_stockcorrelation_message(message):
     bot.reply_to(message, message_text)
 
 
-@bot.message_handler(commands=['search'])
+@bot.message_handler(commands=CMD_SEARCH)
 def handling_search(message):
     logging.info(message)
     print(message)
@@ -261,11 +270,11 @@ def handling_search(message):
     if 'queryresults' not in results:
         bot.reply_to(message, 'Unknown error.')
     else:
-        symbols = [
-            symbolprob['symbol']
+        symbol_and_descp = [
+            symbolprob['symbol'] + ' : ' + symbolprob['descp']
             for symbolprob in sorted(results['queryresults'], key=itemgetter('prob'), reverse=True)
         ]
-        bot.reply_to(message, '\n'.join(symbols))
+        bot.reply_to(message, '\n'.join(symbol_and_descp))
 
 
 

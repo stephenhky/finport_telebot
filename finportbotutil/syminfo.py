@@ -57,7 +57,7 @@ async def get_plots_infos(symbol, startdate, enddate, api_url):
 
 
 async def search_symbols(querystring, api_url):
-    payload = json.dumps({'querystring': querystring, 'topn': 20})
+    payload = json.dumps({'querystring': querystring, 'topn': 6})
     headers = {
         'Content-Type': 'application/json'
     }

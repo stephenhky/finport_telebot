@@ -258,13 +258,17 @@ def handling_search(message):
     querystring = message.text[8:].strip()
     logging.info('query string: {}'.format(querystring))
     print('query string: {}'.format(querystring))
-    for _ in range(modelloadretry):
+    for i in range(modelloadretry):
         results = asyncio.run(search_symbols(querystring, search_api_url))
         if 'message' in results and 'timed out' in results['message']:
+            logging.info('Trial {} fail'.format(i))
+            print('Trial {} fail'.format(i))
             bot.reply_to(message, 'Model loading...')
         elif 'queryresults' in results:
             break
         else:
+            logging.info('Trial {} fail with error'.format(i))
+            print('Trial {} fail with error'.format(i))
             bot.reply_to(message, 'Unknown error; retrying...')
     logging.info(results)
     print(results)

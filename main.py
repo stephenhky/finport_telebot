@@ -12,6 +12,7 @@ from operator import itemgetter
 from dotenv import load_dotenv
 import numpy as np
 import telebot
+import boto3
 
 from finportbotutil.tipcalc import calculate_tips
 from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation, get_plots_infos, search_symbols
@@ -38,6 +39,9 @@ stockcorr_api_url = os.getenv('STOCKCORR')
 search_api_url = os.getenv('SEARCH')
 modelloadretry = int(os.getenv('MODELLOADRETRY', 5))
 
+# Add or Modify User ARN
+addmodifyuser_arn = os.environ.get('ADDUSERARN')
+
 # commands
 CMD_GREET = ['greet']
 RE_HELLO = '[Hh]ello*'
@@ -48,11 +52,26 @@ CMD_STOCKCORR = ['stockcorr']
 CMD_SEARCH = ['search']
 
 
+def add_modify_user(message):
+    lambda_client = boto3.client('lambda')
+    lambda_client.invoke(
+        FunctionName=addmodifyuser_arn,
+        InvocationType='Event',
+        Payload=json.dumps({
+            'id': message.chat.id,
+            'first_name': message.chat.first_name,
+            'last_name': message.chat.last_name,
+            'username': message.chat.username
+        })
+    )
+
+
 @bot.message_handler(commands=CMD_GREET)
 def greet(message):
     logging.info(message)
     print(message)
     bot.reply_to(message, 'Hey, how is it going?')
+    add_modify_user(message)
 
 
 @bot.message_handler(regexp=RE_HELLO)

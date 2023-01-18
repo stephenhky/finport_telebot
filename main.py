@@ -142,6 +142,7 @@ def handling_stockinfo_message(message):
     stringlists = splitted_message[1:]
     if len(stringlists) <= 0:
         bot.reply_to(message, 'No stock symbol provided.')
+        return
 
     # find dates
     finddates_ls = [
@@ -159,6 +160,7 @@ def handling_stockinfo_message(message):
             datetime.strptime(startdate, '%Y-%m-%d')
         except ValueError:
             bot.reply_to(message, 'Invalid date: {}'.format(startdate))
+            return
     else:
         enddate = stringlists[finddates_ls[1]]
         startdate = stringlists[finddates_ls[0]]
@@ -166,10 +168,12 @@ def handling_stockinfo_message(message):
             datetime.strptime(startdate, '%Y-%m-%d')
         except ValueError:
             bot.reply_to(message, 'Invalid date: {}'.format(startdate))
+            return
         try:
             datetime.strptime(enddate, '%Y-%m-%d')
         except ValueError:
             bot.reply_to(message, 'Invalid date: {}'.format(enddate))
+            return
 
     # find symbol
     remaining_indices = sorted(list(set(range(len(stringlists))) - set(finddates_ls)))
@@ -182,6 +186,7 @@ def handling_stockinfo_message(message):
     # wrangle message
     if 'message' in results.keys() and results['message'] == 'Internal server error':
         message_text = 'Unknown symbol: {}'.format(symbol)
+        return
     else:
         message_text = open(os.path.join('messagetemplates', 'stockinfo.txt')).read().format(
             symbol=symbol,
@@ -226,6 +231,7 @@ def handling_stockcorrelation_message(message):
             datetime.strptime(startdate, '%Y-%m-%d')
         except ValueError:
             bot.reply_to(message, 'Invalid date: {}'.format(startdate))
+            return
     else:
         enddate = stringlists[finddates_ls[1]]
         startdate = stringlists[finddates_ls[0]]
@@ -233,10 +239,12 @@ def handling_stockcorrelation_message(message):
             datetime.strptime(startdate, '%Y-%m-%d')
         except ValueError:
             bot.reply_to(message, 'Invalid date: {}'.format(startdate))
+            return
         try:
             datetime.strptime(enddate, '%Y-%m-%d')
         except ValueError:
             bot.reply_to(message, 'Invalid date: {}'.format(enddate))
+            return
 
     # find symbol
     remaining_indices = sorted(list(set(range(len(stringlists))) - set(finddates_ls)))

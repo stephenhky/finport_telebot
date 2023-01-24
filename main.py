@@ -42,6 +42,9 @@ modelloadretry = int(os.getenv('MODELLOADRETRY', 5))
 # Add or Modify User ARN
 addmodifyuser_arn = os.environ.get('ADDUSERARN')
 
+# Symbol Search Wrapper ARN
+searchwrappwer_arn = os.environ.get('SEARCHWRAPPERARN')
+
 # commands
 CMD_GREET = ['greet']
 RE_HELLO = '[Hh]ello*'
@@ -50,6 +53,9 @@ CMD_TIPS = ['tips']
 CMD_STOCK = ['stock', 'stockg']
 CMD_STOCKCORR = ['stockcorr']
 CMD_SEARCH = ['search']
+
+# polling flag
+ispolling = False
 
 
 def add_modify_user(message):
@@ -71,7 +77,7 @@ def greet(message):
     logging.info(message)
     print(message)
     bot.reply_to(message, 'Hey, how is it going?')
-    add_modify_user(message)
+    return {'message': 'Hey, how is it going?'}
 
 
 @bot.message_handler(regexp=RE_HELLO)
@@ -79,6 +85,7 @@ def hello(message):
     logging.info(message)
     print(message)
     bot.send_message(message.chat.id, "Hello!")
+    return {'message': "Hello!"}
 
 
 @bot.message_handler(regexp=RE_BYE)
@@ -86,28 +93,30 @@ def sayonara(message):
     logging.info(message)
     print(message)
     bot.send_message(message.chat.id, "Have a nice day!")
+    return {'message': "Have a nice day!"}
 
 
 @bot.message_handler(commands=CMD_TIPS)
 def handling_tips_command(message):
     logging.info(message)
     print(message)
+
     splitted_message = re.sub('\s+', ' ', message.text).split(' ')
     stringlists = splitted_message[1:]
     if len(stringlists) <= 0:
         bot.reply_to(message, 'No information provided!')
-        return
+        return {'message': 'No information provided!'}
     try:
         subtotal = float(stringlists[0])
     except ValueError:
         bot.reply_to(message, 'Invalid subtotal: {}'.format(stringlists[0]))
-        return
+        return {'message': 'Invalid subtotal: {}'.format(stringlists[0])}
 
     if len(stringlists) > 1:
         state = stringlists[1].upper()
         if state not in ['MD', 'VA', 'DC']:
             bot.reply_to(message, 'Only MD, VA, and DC are supported.')
-            return
+            return {'message': 'Only MD, VA, and DC are supported.'}
     else:
         state = 'MD'
         bot.reply_to(message, 'Assumed in MD.')
@@ -133,16 +142,19 @@ def handling_tips_command(message):
     )
     bot.reply_to(message, response_text)
 
+    return {'message': response_text, 'result': result}
+
 
 @bot.message_handler(commands=CMD_STOCK)
 def handling_stockinfo_message(message):
     logging.info(message)
     print(message)
+
     splitted_message = re.sub('\s+', ' ', message.text).split(' ')
     stringlists = splitted_message[1:]
     if len(stringlists) <= 0:
         bot.reply_to(message, 'No stock symbol provided.')
-        return
+        return {'message': 'No stock symbol provided.'}
 
     # find dates
     finddates_ls = [
@@ -160,7 +172,7 @@ def handling_stockinfo_message(message):
             datetime.strptime(startdate, '%Y-%m-%d')
         except ValueError:
             bot.reply_to(message, 'Invalid date: {}'.format(startdate))
-            return
+            return {'message': 'Invalid date: {}'.format(startdate)}
     else:
         enddate = stringlists[finddates_ls[1]]
         startdate = stringlists[finddates_ls[0]]
@@ -168,12 +180,12 @@ def handling_stockinfo_message(message):
             datetime.strptime(startdate, '%Y-%m-%d')
         except ValueError:
             bot.reply_to(message, 'Invalid date: {}'.format(startdate))
-            return
+            return {'message': 'Invalid date: {}'.format(startdate)}
         try:
             datetime.strptime(enddate, '%Y-%m-%d')
         except ValueError:
             bot.reply_to(message, 'Invalid date: {}'.format(enddate))
-            return
+            return {'message': 'Invalid date: {}'.format(enddate)}
 
     # find symbol
     remaining_indices = sorted(list(set(range(len(stringlists))) - set(finddates_ls)))
@@ -186,7 +198,8 @@ def handling_stockinfo_message(message):
     # wrangle message
     if 'message' in results.keys() and results['message'] == 'Internal server error':
         message_text = 'Unknown symbol: {}'.format(symbol)
-        return
+        bot.reply_to(message, message_text)
+        return {'message': message_text}
     else:
         message_text = open(os.path.join('messagetemplates', 'stockinfo.txt')).read().format(
             symbol=symbol,
@@ -205,15 +218,26 @@ def handling_stockinfo_message(message):
         plot_info = asyncio.run(get_plots_infos(symbol, startdate, enddate, plotinfo_api_url))
         f = urllib.request.urlopen(plot_info['plot']['url'])
         bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
-
+        return {
+            'message': message_text,
+            'result': results,
+            'ploturl': plot_info['plot']['url']
+        }
+    else:
+        return {
+            'message': message_text,
+            'result': results,
+        }
 
 @bot.message_handler(commands=CMD_STOCKCORR)
 def handling_stockcorrelation_message(message):
     logging.info(message)
     print(message)
+
     stringlists = re.sub('\s+', ' ', message.text).split(' ')[1:]
     if len(stringlists) <= 1:
         bot.reply_to(message, 'Not enough stock symbols provided (at least 2).')
+        return {'message': 'Not enough stock symbols provided (at least 2).'}
 
     # find dates
     finddates_ls = [
@@ -231,7 +255,7 @@ def handling_stockcorrelation_message(message):
             datetime.strptime(startdate, '%Y-%m-%d')
         except ValueError:
             bot.reply_to(message, 'Invalid date: {}'.format(startdate))
-            return
+            return {'message': 'Invalid date: {}'.format(startdate)}
     else:
         enddate = stringlists[finddates_ls[1]]
         startdate = stringlists[finddates_ls[0]]
@@ -239,12 +263,12 @@ def handling_stockcorrelation_message(message):
             datetime.strptime(startdate, '%Y-%m-%d')
         except ValueError:
             bot.reply_to(message, 'Invalid date: {}'.format(startdate))
-            return
+            return {'message': 'Invalid date: {}'.format(startdate)}
         try:
             datetime.strptime(enddate, '%Y-%m-%d')
         except ValueError:
             bot.reply_to(message, 'Invalid date: {}'.format(enddate))
-            return
+            return {'message': 'Invalid date: {}'.format(enddate)}
 
     # find symbol
     remaining_indices = sorted(list(set(range(len(stringlists))) - set(finddates_ls)))
@@ -276,37 +300,53 @@ def handling_stockcorrelation_message(message):
         )
 
     bot.reply_to(message, message_text)
+    return {'message': message_text, 'result': results}
 
 
 @bot.message_handler(commands=CMD_SEARCH)
 def handling_search(message):
     logging.info(message)
     print(message)
-    querystring = message.text[8:].strip()
-    logging.info('query string: {}'.format(querystring))
-    print('query string: {}'.format(querystring))
-    for i in range(modelloadretry):
-        results = asyncio.run(search_symbols(querystring, search_api_url))
-        if 'message' in results and 'timed out' in results['message']:
-            logging.info('Trial {} fail'.format(i))
-            print('Trial {} fail'.format(i))
-            bot.reply_to(message, 'Model loading...')
-        elif 'queryresults' in results:
-            break
+
+    if ispolling:
+        querystring = message.text[8:].strip()
+        logging.info('query string: {}'.format(querystring))
+        print('query string: {}'.format(querystring))
+        for i in range(modelloadretry):
+            results = asyncio.run(search_symbols(querystring, search_api_url))
+            if 'message' in results and 'timed out' in results['message']:
+                logging.info('Trial {} fail'.format(i))
+                print('Trial {} fail'.format(i))
+                bot.reply_to(message, 'Model loading...')
+            elif 'queryresults' in results:
+                break
+            else:
+                logging.info('Trial {} fail with error'.format(i))
+                print('Trial {} fail with error'.format(i))
+                bot.reply_to(message, 'Unknown error; retrying...')
+        logging.info(results)
+        print(results)
+        if 'queryresults' not in results:
+            bot.reply_to(message, 'Unknown error.')
+            return {'message': 'Unknown error.'}
         else:
-            logging.info('Trial {} fail with error'.format(i))
-            print('Trial {} fail with error'.format(i))
-            bot.reply_to(message, 'Unknown error; retrying...')
-    logging.info(results)
-    print(results)
-    if 'queryresults' not in results:
-        bot.reply_to(message, 'Unknown error.')
+            symbol_and_descp = [
+                symbolprob['symbol'] + ' : ' + symbolprob['descp']
+                for symbolprob in sorted(results['queryresults'], key=itemgetter('prob'), reverse=True)
+            ]
+            bot.reply_to(message, '\n'.join(symbol_and_descp))
+            return {
+                'message': '\n'.join(symbol_and_descp),
+                'result': results
+            }
     else:
-        symbol_and_descp = [
-            symbolprob['symbol'] + ' : ' + symbolprob['descp']
-            for symbolprob in sorted(results['queryresults'], key=itemgetter('prob'), reverse=True)
-        ]
-        bot.reply_to(message, '\n'.join(symbol_and_descp))
+        lambda_client = boto3.client('lambda')
+        lambda_client.invoke(
+            FunctionName=searchwrappwer_arn,
+            InvocationType='Event',
+            Payload=json.dumps(message.json)
+        )
+        return {'message': None, 'comment': 'Search done using another Lambda'}
 
 
 
@@ -315,23 +355,29 @@ def lambda_handler(event, context):
     logging.info(message)
     print(message)
     if message.get('polling', False):
+        ispolling = True
         bot.polling()
         return {
             'statusCode': 200,
-            'body': 'Lambda executed with polling'
+            'body': json.dumps({'approach': 'polling'})
         }
     else:
         update = telebot.types.Update.de_json(message)
         logging.info(update)
         print(update)
-        bot.process_new_messages([update.message])
+        message = update.message
+        add_modify_user(message)
+
+        bot.process_new_messages([message])
+        print('Processed.')
         return {
             'statusCode': 200,
-            'body': 'Lambda executed as a webhook'
+            'body': json.dumps({'approach': 'webhook'})
         }
 
 
 if __name__ == '__main__':
+    ispolling = True
     bot.polling()
 
 # Reference: how to set up webhook: https://aws.plainenglish.io/develop-your-telegram-chatbot-with-aws-api-gateway-dynamodb-lambda-functions-410dcb1fb58a

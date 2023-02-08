@@ -1,0 +1,7 @@
+/help : Display this help message
+/greet : Greeting
+/tips : Calculating tips (only for MD (Maryland), DC (District of Columbia), and VA (Virginia)) (Arguments: subtotal state [nb_splits])
+/stock : Computing the statistics of a symbol (Arguments: symbol [startdate] [enddate]) (date format: YYYY-mm-dd)
+/stockg : Computing the statistics of a symbol, and plotting (Arguments: symbol [startdate] [enddate]) (date format: YYYY-mm-dd)
+/stockcorr : Computing the correlation between two symbols (Arguments: symbol1 symbol2 [startdate] [enddate]) (date format: YYYY-mm-dd)
+/search : search a symbol with a given text (Argument: any_text)

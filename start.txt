@@ -1,0 +1,3 @@
+Welcome to Finport Bot!
+Type /help to see how to use me!
+I will send you the updates to the main indices of the market at the closing of each trade day.

@@ -46,6 +46,8 @@ addmodifyuser_arn = os.environ.get('ADDUSERARN')
 searchwrappwer_arn = os.environ.get('SEARCHWRAPPERARN')
 
 # commands
+CMD_START = ['start']
+CMD_HELP = ['help']
 CMD_GREET = ['greet']
 RE_HELLO = '[Hh]ello*'
 RE_BYE = '[Bb]ye[!]?'
@@ -70,6 +72,24 @@ def add_modify_user(message):
             'username': message.chat.username
         })
     )
+
+
+@bot.message_handler(commands=CMD_START)
+def start(message):
+    logging.info(message)
+    print(message)
+    start_msg = open('start.txt', 'r').read()
+    bot.send_message(message.chat.id, start_msg)
+    return {'message': start_msg}
+
+
+@bot.message_handler(commands=CMD_HELP)
+def help(message):
+    logging.info(message)
+    print(message)
+    help_msg = open('help.txt', 'r').read()
+    bot.reply_to(message, help_msg)
+    return {'message': help_msg}
 
 
 @bot.message_handler(commands=CMD_GREET)

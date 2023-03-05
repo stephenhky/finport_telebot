@@ -15,7 +15,7 @@ import telebot
 import boto3
 
 from finportbotutil.tipcalc import calculate_tips
-from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation, get_plots_infos, search_symbols
+from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation, get_plots_infos, search_symbols, get_ma_plots_info
 
 logging.basicConfig(level=logging.INFO)
 
@@ -31,6 +31,7 @@ tipcalc_api_url = os.getenv('TIPCALCURL')
 # Stock inference API
 stockinfo_api_url = os.getenv('FININFO')
 plotinfo_api_url = os.getenv('STOCKPLOT')
+maplotinfo_api_url = os.getenv('MAPLOT')
 
 # Stock correlation API
 stockcorr_api_url = os.getenv('STOCKCORR')
@@ -55,6 +56,10 @@ CMD_TIPS = ['tips']
 CMD_STOCK = ['stock', 'stockg']
 CMD_STOCKCORR = ['stockcorr']
 CMD_SEARCH = ['search']
+CMD_MA50 = ['stockgma50']
+CMD_MA200 = ['stockgma200']
+CMD_SP500_MA = ['sp500ma']
+
 
 # polling flag
 ispolling = False
@@ -78,7 +83,7 @@ def add_modify_user(message):
 def start(message):
     logging.info(message)
     print(message)
-    start_msg = open('start.txt', 'r').read()
+    start_msg = open('messagetemplates/start.txt', 'r').read()
     bot.send_message(message.chat.id, start_msg)
     return {'message': start_msg}
 
@@ -87,7 +92,7 @@ def start(message):
 def help(message):
     logging.info(message)
     print(message)
-    help_msg = open('help.txt', 'r').read()
+    help_msg = open('messagetemplates/help.txt', 'r').read()
     bot.reply_to(message, help_msg)
     return {'message': help_msg}
 
@@ -165,7 +170,7 @@ def handling_tips_command(message):
     return {'message': response_text, 'result': result}
 
 
-@bot.message_handler(commands=CMD_STOCK)
+@bot.message_handler(commands=CMD_STOCK+CMD_MA50+CMD_MA200)
 def handling_stockinfo_message(message):
     logging.info(message)
     print(message)
@@ -243,11 +248,22 @@ def handling_stockinfo_message(message):
             'result': results,
             'ploturl': plot_info['plot']['url']
         }
+    elif splitted_message[0] == '/stockgma50' or splitted_message[0] =='/stockgma200':
+        dayswindow = [50] if splitted_message[0] == '/stockgma50' else [200]
+        plot_info = asyncio.run(get_ma_plots_info(symbol, startdate, enddate, dayswindow, maplotinfo_api_url))
+        f = urllib.request.urlopen(plot_info['plot']['url'])
+        bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
+        return {
+            'message': message_text,
+            'result': results,
+            'ploturl': plot_info['plot']['url']
+        }
     else:
         return {
             'message': message_text,
             'result': results,
         }
+
 
 @bot.message_handler(commands=CMD_STOCKCORR)
 def handling_stockcorrelation_message(message):
@@ -367,6 +383,18 @@ def handling_search(message):
             Payload=json.dumps(message.json)
         )
         return {'message': None, 'comment': 'Search done using another Lambda'}
+
+
+@bot.message_handler(commands=CMD_SP500_MA)
+def plotting_sp500_ma(message):
+    enddate = date.today().strftime('%Y-%m-%d')
+    startdate = (date.today() - relativedelta(years=1)).strftime('%Y-%m-%d')
+    plot_info = asyncio.run(get_ma_plots_info('^GSPC', startdate, enddate, [50, 200], maplotinfo_api_url))
+    f = urllib.request.urlopen(plot_info['plot']['url'])
+    bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
+    return {
+        'ploturl': plot_info['plot']['url']
+    }
 
 
 

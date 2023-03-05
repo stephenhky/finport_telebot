@@ -64,3 +64,18 @@ async def search_symbols(querystring, api_url):
 
     response = requests.request('GET', api_url, headers=headers, data=payload)
     return json.loads(response.text)
+
+
+async def get_ma_plots_info(symbol, startdate, enddate, dayswindow, api_url):
+    payload = json.dumps({
+        'symbol': symbol,
+        'startdate': startdate,
+        'enddate': enddate,
+        'dayswindow': dayswindow
+    })
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.request("GET", api_url, headers=headers, data=payload)
+    return json.loads(response.text)

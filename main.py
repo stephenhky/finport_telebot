@@ -389,13 +389,12 @@ def handling_search(message):
 def plotting_sp500_ma(message):
     enddate = date.today().strftime('%Y-%m-%d')
     startdate = (date.today() - relativedelta(years=1)).strftime('%Y-%m-%d')
-    plot_info = asyncio.run(get_ma_plots_info('^GSPC', startdate, enddate, [50, 200], maplotinfo_api_url))
+    plot_info = asyncio.run(get_ma_plots_info('^GSPC', startdate, enddate, [50, 200], maplotinfo_api_url, title='S&P 500 (^GSPC)'))
     f = urllib.request.urlopen(plot_info['plot']['url'])
     bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
     return {
         'ploturl': plot_info['plot']['url']
     }
-
 
 
 def lambda_handler(event, context):

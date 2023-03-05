@@ -66,12 +66,13 @@ async def search_symbols(querystring, api_url):
     return json.loads(response.text)
 
 
-async def get_ma_plots_info(symbol, startdate, enddate, dayswindow, api_url):
+async def get_ma_plots_info(symbol, startdate, enddate, dayswindow, api_url, title=None):
     payload = json.dumps({
         'symbol': symbol,
         'startdate': startdate,
         'enddate': enddate,
-        'dayswindow': dayswindow
+        'dayswindow': dayswindow,
+        'title': symbol if title is None else title
     })
     headers = {
         'Content-Type': 'application/json'

@@ -62,6 +62,7 @@ CMD_MA50 = ['stockgma50']
 CMD_MA200 = ['stockgma200']
 CMD_SP500_MA = ['sp500ma']
 CMD_NASDAQ_MA = ['nasdaqma']
+CMD_DJI_MA = ['djima']
 
 
 # polling flag
@@ -393,23 +394,33 @@ def handling_search(message):
         return {'message': None, 'comment': 'Search done using another Lambda'}
 
 
-@bot.message_handler(commands=CMD_SP500_MA)
-def plotting_sp500_ma(message):
+def plotting_index_ma(index, plottitle):
     enddate = date.today().strftime('%Y-%m-%d')
     startdate = (date.today() - relativedelta(years=1)).strftime('%Y-%m-%d')
-    plot_info = asyncio.run(get_ma_plots_info('^GSPC', startdate, enddate, [50, 200], maplotinfo_api_url, title='S&P 500 (^GSPC)'))
-    f = urllib.request.urlopen(plot_info['plot']['url'])
-    bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
-    return {
-        'ploturl': plot_info['plot']['url']
-    }
+    plot_info = asyncio.run(
+        get_ma_plots_info(index, startdate, enddate, [50, 200], maplotinfo_api_url, title=plottitle))
+    return plot_info
 
 
-@bot.message_handler(commands=CMD_NASDAQ_MA)
-def plotting_nasdaq_ma(message):
-    enddate = date.today().strftime('%Y-%m-%d')
-    startdate = (date.today() - relativedelta(years=1)).strftime('%Y-%m-%d')
-    plot_info = asyncio.run(get_ma_plots_info('^IXIC', startdate, enddate, [50, 200], maplotinfo_api_url, title='NASDAQ (^IXIC)'))
+@bot.message_handler(commands=CMD_SP500_MA+CMD_NASDAQ_MA+CMD_DJI_MA)
+def sending_index_ma(message):
+    logging.info(message)
+    print(message)
+
+    splitted_message = re.sub('\s+', ' ', message.text).split(' ')
+    if splitted_message[0] == '/sp500ma':
+        index = '^GSPC'
+        plottitle = 'S&P 500 (^GSPC)'
+    elif splitted_message[0] == '/nasdaqma':
+        index = '^IXIC'
+        plottitle = 'NASDAQ (^IXIC)'
+    elif splitted_message[0] == '/djima':
+        index = '^DJI'
+        plottitle = 'Dow Jones (^DJI)'
+    else:
+        return {}
+
+    plot_info = plotting_index_ma(index, plottitle)
     f = urllib.request.urlopen(plot_info['plot']['url'])
     bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
     return {

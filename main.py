@@ -61,6 +61,7 @@ CMD_SEARCH = ['search']
 CMD_MA50 = ['stockgma50']
 CMD_MA200 = ['stockgma200']
 CMD_SP500_MA = ['sp500ma']
+CMD_NASDAQ_MA = ['nasdaqma']
 
 
 # polling flag
@@ -397,6 +398,18 @@ def plotting_sp500_ma(message):
     enddate = date.today().strftime('%Y-%m-%d')
     startdate = (date.today() - relativedelta(years=1)).strftime('%Y-%m-%d')
     plot_info = asyncio.run(get_ma_plots_info('^GSPC', startdate, enddate, [50, 200], maplotinfo_api_url, title='S&P 500 (^GSPC)'))
+    f = urllib.request.urlopen(plot_info['plot']['url'])
+    bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
+    return {
+        'ploturl': plot_info['plot']['url']
+    }
+
+
+@bot.message_handler(commands=CMD_NASDAQ_MA)
+def plotting_nasdaq_ma(message):
+    enddate = date.today().strftime('%Y-%m-%d')
+    startdate = (date.today() - relativedelta(years=1)).strftime('%Y-%m-%d')
+    plot_info = asyncio.run(get_ma_plots_info('^IXIC', startdate, enddate, [50, 200], maplotinfo_api_url, title='NASDAQ (^IXIC)'))
     f = urllib.request.urlopen(plot_info['plot']['url'])
     bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
     return {

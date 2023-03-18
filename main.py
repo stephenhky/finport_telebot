@@ -8,6 +8,8 @@ from dateutil.relativedelta import relativedelta
 import asyncio
 import urllib
 from operator import itemgetter
+import traceback
+import sys
 
 from dotenv import load_dotenv
 import numpy as np
@@ -67,16 +69,21 @@ ispolling = False
 
 def add_modify_user(message):
     lambda_client = boto3.client('lambda')
-    lambda_client.invoke(
-        FunctionName=addmodifyuser_arn,
-        InvocationType='Event',
-        Payload=json.dumps({
-            'id': message.chat.id,
-            'first_name': message.chat.first_name,
-            'last_name': message.chat.last_name,
-            'username': message.chat.username
-        })
-    )
+    try:
+        lambda_client.invoke(
+            FunctionName=addmodifyuser_arn,
+            InvocationType='Event',
+            Payload=json.dumps({
+                'id': message.chat.id,
+                'first_name': message.chat.first_name,
+                'last_name': message.chat.last_name,
+                'username': message.chat.username
+            })
+        )
+    except AttributeError as e:
+        print('The object "message" gives AttributeError!', file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+        raise e
 
 
 @bot.message_handler(commands=CMD_START)
@@ -413,14 +420,25 @@ def lambda_handler(event, context):
         logging.info(update)
         print(update)
         message = update.message
-        add_modify_user(message)
+        try:
+            add_modify_user(message)
+        except AttributeError:
+            pass
 
-        bot.process_new_messages([message])
-        print('Processed.')
-        return {
-            'statusCode': 200,
-            'body': json.dumps({'approach': 'webhook'})
-        }
+        try:
+            bot.process_new_messages([message])
+            print('Processed.')
+            return {
+                'statusCode': 200,
+                'body': json.dumps({'approach': 'webhook'})
+            }
+        except AttributeError:
+            print('Telegram error.', file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
+            return {
+                'statusCode': 200,
+                'body': json.dumps({'approach': 'webhook'})
+            }
 
 
 if __name__ == '__main__':

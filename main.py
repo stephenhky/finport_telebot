@@ -88,6 +88,55 @@ def add_modify_user(message):
         raise e
 
 
+keyboard_indices = {
+    'sp500': 'S&P 500',
+    'nasdaq': 'NASDAQ',
+    'dji': 'Dow Jone Index'
+}
+
+def makeMAKeyboard():
+    markup = telebot.types.InlineKeyboardMarkup()
+
+    for key, value in keyboard_indices.index():
+        markup.add(
+            telebot.types.InlineKeyboardButton(text=value, callback_data='buttonma_{}'.format(key))
+        )
+
+    return markup
+
+
+@bot.message_handler(commands=['maplot'])
+def display_ma_keyboard(message):
+    bot.send_message(chat_id=message.chat.id,
+                     text='Choose one indices (xxxxxdddddd)',
+                     reply_markup=makeMAKeyboard(),
+                     parse_mode='HTML')
+
+
+@bot.callback_query_handlers(func=lambda call: True)
+def handle_query(call):
+    callbackstr = call.data
+
+    if callbackstr == 'buttonma_sp500':
+        index = '^GSPC'
+        plottitle = 'S&P 500 (^GSPC)'
+    elif callbackstr == 'buttonma_nasdaq':
+        index = '^IXIC'
+        plottitle = 'NASDAQ (^IXIC)'
+    elif callbackstr == 'buttonma_dji':
+        index = '^DJI'
+        plottitle = 'Dow Jones (^DJI)'
+    else:
+        return {}
+
+    plot_info = plotting_index_ma(index, plottitle)
+    f = urllib.request.urlopen(plot_info['plot']['url'])
+    bot.send_photo(call.id, f)
+    return {
+        'ploturl': plot_info['plot']['url']
+    }
+
+
 @bot.message_handler(commands=CMD_START)
 def start(message):
     logging.info(message)
@@ -423,6 +472,30 @@ def sending_index_ma(message):
     plot_info = plotting_index_ma(index, plottitle)
     f = urllib.request.urlopen(plot_info['plot']['url'])
     bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
+    return {
+        'ploturl': plot_info['plot']['url']
+    }
+
+
+@bot.callback_query_handlers(func=lambda call: True)
+def handle_query(call):
+    callbackstr = call.data
+
+    if callbackstr == 'buttonma_sp500':
+        index = '^GSPC'
+        plottitle = 'S&P 500 (^GSPC)'
+    elif callbackstr == 'buttonma_nasdaq':
+        index = '^IXIC'
+        plottitle = 'NASDAQ (^IXIC)'
+    elif callbackstr == 'buttonma_dji':
+        index = '^DJI'
+        plottitle = 'Dow Jones (^DJI)'
+    else:
+        return {}
+
+    plot_info = plotting_index_ma(index, plottitle)
+    f = urllib.request.urlopen(plot_info['plot']['url'])
+    bot.send_photo(call.id, f)
     return {
         'ploturl': plot_info['plot']['url']
     }

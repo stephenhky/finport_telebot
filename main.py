@@ -113,30 +113,6 @@ def display_ma_keyboard(message):
                      parse_mode='HTML')
 
 
-@bot.callback_query_handlers(func=lambda call: True)
-def handle_query(call):
-    callbackstr = call.data
-
-    if callbackstr == 'buttonma_sp500':
-        index = '^GSPC'
-        plottitle = 'S&P 500 (^GSPC)'
-    elif callbackstr == 'buttonma_nasdaq':
-        index = '^IXIC'
-        plottitle = 'NASDAQ (^IXIC)'
-    elif callbackstr == 'buttonma_dji':
-        index = '^DJI'
-        plottitle = 'Dow Jones (^DJI)'
-    else:
-        return {}
-
-    plot_info = plotting_index_ma(index, plottitle)
-    f = urllib.request.urlopen(plot_info['plot']['url'])
-    bot.send_photo(call.id, f)
-    return {
-        'ploturl': plot_info['plot']['url']
-    }
-
-
 @bot.message_handler(commands=CMD_START)
 def start(message):
     logging.info(message)

@@ -107,10 +107,11 @@ def makeMAKeyboard():
 
 @bot.message_handler(commands=['maplot'])
 def display_ma_keyboard(message):
-    bot.send_message(chat_id=message.chat.id,
+    msg = bot.send_message(chat_id=message.chat.id,
                      text='Choose one indices (xxxxxdddddd)',
                      reply_markup=makeMAKeyboard(),
                      parse_mode='HTML')
+    bot.register_next_step_handler(msg, handle_query)
 
 
 @bot.message_handler(commands=CMD_START)
@@ -453,7 +454,7 @@ def sending_index_ma(message):
     }
 
 
-@bot.callback_query_handlers(func=lambda call: True)
+# @bot.callback_query_handlers(func=lambda call: call.data.startswith('buttonma_'))
 def handle_query(call):
     callbackstr = call.data
 

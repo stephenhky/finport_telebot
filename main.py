@@ -63,6 +63,7 @@ CMD_MA200 = ['stockgma200']
 CMD_SP500_MA = ['sp500ma']
 CMD_NASDAQ_MA = ['nasdaqma']
 CMD_DJI_MA = ['djima']
+CMD_MAPLOT = ['maplot']
 
 
 # polling flag
@@ -86,6 +87,32 @@ def add_modify_user(message):
         print('The object "message" gives AttributeError!', file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)
         raise e
+
+
+keyboard_indices = {
+    'sp500': 'S&P 500',
+    'nasdaq': 'NASDAQ',
+    'dji': 'Dow Jone Index'
+}
+
+def makeMAKeyboard():
+    markup = telebot.types.InlineKeyboardMarkup()
+
+    for key, value in keyboard_indices.items():
+        markup.add(
+            telebot.types.InlineKeyboardButton(text=value, callback_data='button_maplot_{}'.format(key))
+        )
+
+    return markup
+
+
+@bot.message_handler(commands=CMD_MAPLOT)
+def display_ma_keyboard(message):
+    msg = bot.send_message(chat_id=message.chat.id,
+                     text='Choose one index',
+                     reply_markup=makeMAKeyboard(),
+                     parse_mode='HTML')
+    bot.register_next_step_handler(msg, handle_maplot_callback_query)
 
 
 @bot.message_handler(commands=CMD_START)
@@ -428,6 +455,29 @@ def sending_index_ma(message):
     }
 
 
+def handle_maplot_callback_query(call):
+    callbackstr = call.data
+
+    if callbackstr == 'button_maplot_sp500':
+        index = '^GSPC'
+        plottitle = 'S&P 500 (^GSPC)'
+    elif callbackstr == 'button_maplot_nasdaq':
+        index = '^IXIC'
+        plottitle = 'NASDAQ (^IXIC)'
+    elif callbackstr == 'button_maplot_dji':
+        index = '^DJI'
+        plottitle = 'Dow Jones (^DJI)'
+    else:
+        return {}
+
+    plot_info = plotting_index_ma(index, plottitle)
+    f = urllib.request.urlopen(plot_info['plot']['url'])
+    bot.send_photo(call.from_user.id, f)
+    return {
+        'ploturl': plot_info['plot']['url']
+    }
+
+
 def lambda_handler(event, context):
     message = json.loads(event['body'])
     logging.info(message)
@@ -443,26 +493,36 @@ def lambda_handler(event, context):
         update = telebot.types.Update.de_json(message)
         logging.info(update)
         print(update)
-        message = update.message
-        try:
-            add_modify_user(message)
-        except AttributeError:
-            pass
+        if update.message is not None:
+            message = update.message
+            try:
+                add_modify_user(message)
+            except AttributeError:
+                pass
 
-        try:
-            bot.process_new_messages([message])
-            print('Processed.')
+            try:
+                bot.process_new_messages([message])
+                print('Processed.')
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps({'approach': 'webhook'})
+                }
+            except AttributeError:
+                print('Telegram error.', file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps({'approach': 'webhook'})
+                }
+        elif update.callback_query is not None:
+            callback_cmd = update.callback_query.data
+            if callback_cmd.startswith('button_maplot_'):
+                handle_maplot_callback_query(update.callback_query)
             return {
                 'statusCode': 200,
                 'body': json.dumps({'approach': 'webhook'})
             }
-        except AttributeError:
-            print('Telegram error.', file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
-            return {
-                'statusCode': 200,
-                'body': json.dumps({'approach': 'webhook'})
-            }
+
 
 
 if __name__ == '__main__':

@@ -1,0 +1,2 @@
+help - Get a list of commands.
+maplot - Plotting indices of your choice and its 50- and 200-day moving average.

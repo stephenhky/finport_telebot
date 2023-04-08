@@ -456,26 +456,32 @@ def sending_index_ma(message):
 
 
 def handle_maplot_callback_query(call):
-    callbackstr = call.data
+    if isinstance(call, telebot.types.CallbackQuery):
+        callbackstr = call.data
 
-    if callbackstr == 'button_maplot_sp500':
-        index = '^GSPC'
-        plottitle = 'S&P 500 (^GSPC)'
-    elif callbackstr == 'button_maplot_nasdaq':
-        index = '^IXIC'
-        plottitle = 'NASDAQ (^IXIC)'
-    elif callbackstr == 'button_maplot_dji':
-        index = '^DJI'
-        plottitle = 'Dow Jones (^DJI)'
+        if callbackstr == 'button_maplot_sp500':
+            index = '^GSPC'
+            plottitle = 'S&P 500 (^GSPC)'
+        elif callbackstr == 'button_maplot_nasdaq':
+            index = '^IXIC'
+            plottitle = 'NASDAQ (^IXIC)'
+        elif callbackstr == 'button_maplot_dji':
+            index = '^DJI'
+            plottitle = 'Dow Jones (^DJI)'
+        else:
+            return {}
+
+        plot_info = plotting_index_ma(index, plottitle)
+        f = urllib.request.urlopen(plot_info['plot']['url'])
+        bot.send_photo(call.from_user.id, f)
+        return {
+            'ploturl': plot_info['plot']['url']
+        }
+    elif isinstance(call, telebot.types.Message):
+        bot.send_message(call.id, 'Internal error. Try again!')
     else:
-        return {}
-
-    plot_info = plotting_index_ma(index, plottitle)
-    f = urllib.request.urlopen(plot_info['plot']['url'])
-    bot.send_photo(call.from_user.id, f)
-    return {
-        'ploturl': plot_info['plot']['url']
-    }
+        logging.error('Unknown error!')
+        print('Unknown error!', file=sys.stderr)
 
 
 def lambda_handler(event, context):

@@ -225,7 +225,7 @@ def handling_stockinfo_message(message):
     ]
     if len(finddates_ls) == 0:
         enddate = date.today().strftime('%Y-%m-%d')
-        startdate = (date.today() - relativedelta(months=3)).strftime('%Y-%m-%d')
+        startdate = (date.today() - relativedelta(years=1)).strftime('%Y-%m-%d')
     elif len(finddates_ls) == 1:
         enddate = date.today().strftime('%Y-%m-%d')
         startdate = stringlists[finddates_ls[0]]
@@ -319,7 +319,7 @@ def handling_stockcorrelation_message(message):
     ]
     if len(finddates_ls) == 0:
         enddate = date.today().strftime('%Y-%m-%d')
-        startdate = (date.today() - relativedelta(months=3)).strftime('%Y-%m-%d')
+        startdate = (date.today() - relativedelta(years=1)).strftime('%Y-%m-%d')
     elif len(finddates_ls) == 1:
         enddate = date.today().strftime('%Y-%m-%d')
         startdate = stringlists[finddates_ls[0]]

@@ -9,3 +9,4 @@
 /stockgma200: Computing the statistics of a symbol, and plotting the 200-day moving average (Arguments: symbol [startdate] [enddate]) (date format: YYYY-mm-dd)
 /sp500ma: Plotting the S&P 500 index and its 50- and 200-day moving average.
 /maplot: Plotting indices of your choice and its 50- and 200-day moving average.
+/predictcrash: Predict the next market crash.

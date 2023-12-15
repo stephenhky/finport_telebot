@@ -1,0 +1,3 @@
+From the model and the information given, the projected crash date is {crashdate}.
+
+(Disclaimer: prediction can change due to stochasticity and other events. The estimation is by no means accurate.)

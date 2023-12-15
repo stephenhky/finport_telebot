@@ -80,3 +80,17 @@ async def get_ma_plots_info(symbol, startdate, enddate, dayswindow, api_url, tit
 
     response = requests.request("GET", api_url, headers=headers, data=payload)
     return json.loads(response.text)
+
+
+async def fit_lppl(symbol, startdate, enddate, api_url):
+    payload = json.dumps({
+        'symbol': symbol,
+        'startdate': startdate,
+        'enddate': enddate
+    })
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.request("GET", api_url, headers=headers, data=payload)
+    return json.loads(response.text)

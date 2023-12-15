@@ -3,7 +3,7 @@ import json
 import re
 import os
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import asyncio
 import urllib
@@ -17,7 +17,7 @@ import telebot
 import boto3
 
 from finportbotutil.tipcalc import calculate_tips
-from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation, get_plots_infos, search_symbols, get_ma_plots_info
+from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation, get_plots_infos, search_symbols, get_ma_plots_info, fit_lppl
 
 logging.basicConfig(level=logging.INFO)
 
@@ -40,13 +40,16 @@ stockcorr_api_url = os.getenv('STOCKCORR')
 
 # Search API
 search_api_url = os.getenv('SEARCH')
-modelloadretry = int(os.getenv('MODELLOADRETRY', 5))
+modelloadretry = int(os.getenv('SEARCHMODELLOADRETRY', 5))
 
 # Add or Modify User ARN
 addmodifyuser_arn = os.environ.get('ADDUSERARN')
 
 # Symbol Search Wrapper ARN
 searchwrappwer_arn = os.environ.get('SEARCHWRAPPERARN')
+
+# fit LPPL model URL
+fit_lppl_url = os.environ.get('FITLPPL')
 
 # commands
 CMD_START = ['start']
@@ -64,6 +67,7 @@ CMD_SP500_MA = ['sp500ma']
 CMD_NASDAQ_MA = ['nasdaqma']
 CMD_DJI_MA = ['djima']
 CMD_MAPLOT = ['maplot']
+CMD_FITLPPL = ['predictcrash']
 
 
 # polling flag
@@ -482,6 +486,31 @@ def handle_maplot_callback_query(call):
     else:
         logging.error('Unknown error!')
         print('Unknown error!', file=sys.stderr)
+
+@bot.message_handler(commands=CMD_FITLPPL)
+def fit_lppl_bubble_burst(message):
+    logging.info(message)
+    print(message)
+
+    stringlists = re.sub('\s+', ' ', message.text).split(' ')[1:]
+    symbol = '^GSPC' if len(stringlists) < 1 else stringlists[0]
+    startdate = (datetime.today() - timedelta(days=365)).strftime('%Y-%m-%d') if len(stringlists) < 2 else stringlists[1]
+    enddate = datetime.today().strftime('%Y-%m-%d') if len(stringlists) < 3 else stringlists[2]
+
+    results = asyncio.run(fit_lppl(symbol, startdate, enddate, fit_lppl_url))
+    logging.info(results)
+    print(results)
+
+    if 'message' in results.keys() and results['message'] == 'Internal server error':
+        message_text = 'API internal error.'
+        bot.reply_to(message, message_text)
+        return {'message': message_text}
+    else:
+        message_text = open(os.path.join('messagetemplates', 'crash.txt')).read().format(
+            crashdate=results['estimated_crash_date']
+        )
+        bot.reply_to(message, message_text)
+        return {'message': message_text,}
 
 
 def lambda_handler(event, context):

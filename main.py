@@ -96,7 +96,8 @@ def add_modify_user(message):
 keyboard_indices = {
     'sp500': 'S&P 500',
     'nasdaq': 'NASDAQ',
-    'dji': 'Dow Jone Index'
+    'dji': 'Dow Jone Index',
+    'russell2000': 'Russell 2000'
 }
 
 def makeMAKeyboard():
@@ -460,6 +461,7 @@ def sending_index_ma(message):
 
 
 def handle_maplot_callback_query(call):
+    print('handling button')
     if isinstance(call, telebot.types.CallbackQuery):
         callbackstr = call.data
 
@@ -472,9 +474,13 @@ def handle_maplot_callback_query(call):
         elif callbackstr == 'button_maplot_dji':
             index = '^DJI'
             plottitle = 'Dow Jones (^DJI)'
+        elif callbackstr == 'button_maplot_russell2000':
+            index = '^RUT'
+            plottitle = 'Russell 2000 (^RUT)'
         else:
             return {}
 
+        print('plotting moving average for {}'.format(index))
         plot_info = plotting_index_ma(index, plottitle)
         f = urllib.request.urlopen(plot_info['plot']['url'])
         bot.send_photo(call.from_user.id, f)

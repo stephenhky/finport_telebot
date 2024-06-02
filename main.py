@@ -38,15 +38,8 @@ maplotinfo_api_url = os.getenv('MAPLOT')
 # Stock correlation API
 stockcorr_api_url = os.getenv('STOCKCORR')
 
-# Search API
-search_api_url = os.getenv('SEARCH')
-modelloadretry = int(os.getenv('SEARCHMODELLOADRETRY', 5))
-
 # Add or Modify User ARN
 addmodifyuser_arn = os.environ.get('ADDUSERARN')
-
-# Symbol Search Wrapper ARN
-searchwrappwer_arn = os.environ.get('SEARCHWRAPPERARN')
 
 # fit LPPL model URL
 fit_lppl_url = os.environ.get('FITLPPL')
@@ -60,7 +53,6 @@ RE_BYE = '[Bb]ye[!]?'
 CMD_TIPS = ['tips']
 CMD_STOCK = ['stock', 'stockg']
 CMD_STOCKCORR = ['stockcorr']
-CMD_SEARCH = ['search']
 CMD_MA50 = ['stockgma50']
 CMD_MA200 = ['stockgma200']
 CMD_SP500_MA = ['sp500ma']
@@ -378,52 +370,6 @@ def handling_stockcorrelation_message(message):
 
     bot.reply_to(message, message_text)
     return {'message': message_text, 'result': results}
-
-
-@bot.message_handler(commands=CMD_SEARCH)
-def handling_search(message):
-    logging.info(message)
-    print(message)
-
-    if ispolling:
-        querystring = message.text[8:].strip()
-        logging.info('query string: {}'.format(querystring))
-        print('query string: {}'.format(querystring))
-        for i in range(modelloadretry):
-            results = asyncio.run(search_symbols(querystring, search_api_url))
-            if 'message' in results and 'timed out' in results['message']:
-                logging.info('Trial {} fail'.format(i))
-                print('Trial {} fail'.format(i))
-                bot.reply_to(message, 'Model loading...')
-            elif 'queryresults' in results:
-                break
-            else:
-                logging.info('Trial {} fail with error'.format(i))
-                print('Trial {} fail with error'.format(i))
-                bot.reply_to(message, 'Unknown error; retrying...')
-        logging.info(results)
-        print(results)
-        if 'queryresults' not in results:
-            bot.reply_to(message, 'Unknown error.')
-            return {'message': 'Unknown error.'}
-        else:
-            symbol_and_descp = [
-                symbolprob['symbol'] + ' : ' + symbolprob['descp']
-                for symbolprob in sorted(results['queryresults'], key=itemgetter('prob'), reverse=True)
-            ]
-            bot.reply_to(message, '\n'.join(symbol_and_descp))
-            return {
-                'message': '\n'.join(symbol_and_descp),
-                'result': results
-            }
-    else:
-        lambda_client = boto3.client('lambda')
-        lambda_client.invoke(
-            FunctionName=searchwrappwer_arn,
-            InvocationType='Event',
-            Payload=json.dumps(message.json)
-        )
-        return {'message': None, 'comment': 'Search done using another Lambda'}
 
 
 def plotting_index_ma(index, plottitle):

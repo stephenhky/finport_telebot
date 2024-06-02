@@ -4,7 +4,6 @@
 /stock : Computing the statistics of a symbol (Arguments: symbol [startdate] [enddate]) (date format: YYYY-mm-dd)
 /stockg : Computing the statistics of a symbol, and plotting (Arguments: symbol [startdate] [enddate]) (date format: YYYY-mm-dd)
 /stockcorr : Computing the correlation between two symbols (Arguments: symbol1 symbol2 [startdate] [enddate]) (date format: YYYY-mm-dd)
-/search : search a symbol with a given text (Argument: any_text)
 /stockgma50: Computing the statistics of a symbol, and plotting the 50-day moving average (Arguments: symbol [startdate] [enddate]) (date format: YYYY-mm-dd)
 /stockgma200: Computing the statistics of a symbol, and plotting the 200-day moving average (Arguments: symbol [startdate] [enddate]) (date format: YYYY-mm-dd)
 /sp500ma: Plotting the S&P 500 index and its 50- and 200-day moving average.

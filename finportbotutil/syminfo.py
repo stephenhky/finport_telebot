@@ -34,36 +34,32 @@ async def get_symbols_correlation(symbol1, symbol2, startdate, enddate, api_url)
 
 
 async def get_plots_infos(symbol, startdate, enddate, api_url):
-    payload = json.dumps({
-        'startdate': startdate,
-        'enddate': enddate,
-        'components': {
-            'name': 'DynamicPortfolio',
-            'current_date': enddate,
-            'timeseries': [
-                {
-                    'date': startdate,
-                    'portfolio': {symbol: 1}
-                }
-            ]
+    done = False
+    while not done:
+        payload = json.dumps({
+            'startdate': startdate,
+            'enddate': enddate,
+            'components': {
+                'name': 'DynamicPortfolio',
+                'current_date': enddate,
+                'timeseries': [
+                    {
+                        'date': startdate,
+                        'portfolio': {symbol: 1}
+                    }
+                ]
+            }
+        })
+        headers = {
+            'Content-Type': 'application/json'
         }
-    })
-    headers = {
-        'Content-Type': 'application/json'
-    }
 
-    response = requests.request('GET', api_url, headers=headers, data=payload)
-    return json.loads(response.text)
+        response = requests.request('GET', api_url, headers=headers, data=payload)
 
-
-async def search_symbols(querystring, api_url):
-    payload = json.dumps({'querystring': querystring, 'topn': 6})
-    headers = {
-        'Content-Type': 'application/json'
-    }
-
-    response = requests.request('GET', api_url, headers=headers, data=payload)
-    return json.loads(response.text)
+        response_dict = json.loads(response.text)
+        if 'plot' in response_dict:
+            done = True
+    return response_dict
 
 
 async def get_ma_plots_info(symbol, startdate, enddate, dayswindow, api_url, title=None):

@@ -17,7 +17,7 @@ import telebot
 import boto3
 
 from finportbotutil.tipcalc import calculate_tips
-from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation, get_plots_infos, search_symbols, get_ma_plots_info, fit_lppl
+from finportbotutil.syminfo import get_symbol_inference, get_symbols_correlation, get_plots_infos, get_ma_plots_info, fit_lppl
 
 logging.basicConfig(level=logging.INFO)
 

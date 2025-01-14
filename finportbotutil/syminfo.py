@@ -48,7 +48,8 @@ async def get_plots_infos(symbol, startdate, enddate, api_url):
                         'portfolio': {symbol: 1}
                     }
                 ]
-            }
+            },
+            'title': symbol
         })
         headers = {
             'Content-Type': 'application/json'

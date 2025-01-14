@@ -7,7 +7,6 @@ from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import asyncio
 import urllib
-from operator import itemgetter
 import traceback
 import sys
 

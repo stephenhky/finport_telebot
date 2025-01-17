@@ -84,30 +84,31 @@ def add_modify_user(message):
         raise e
 
 
-keyboard_indices = {
-    'sp500': 'S&P 500',
-    'nasdaq': 'NASDAQ',
-    'dji': 'Dow Jone Index',
-    'russell2000': 'Russell 2000'
-}
-
-def makeMAKeyboard():
+def makeMAUSKeyboard():
+    us_keyboard_indices = {
+        'sp500': 'S&P 500',
+        'nasdaq': 'NASDAQ',
+        'dji': 'Dow Jone Index',
+        'russell2000': 'Russell 2000'
+    }
     markup = telebot.types.InlineKeyboardMarkup()
 
-    for key, value in keyboard_indices.items():
+    for key, value in us_keyboard_indices.items():
         markup.add(
-            telebot.types.InlineKeyboardButton(text=value, callback_data='button_maplot_{}'.format(key))
+            telebot.types.InlineKeyboardButton(text=value, callback_data='button_maplot_us_{}'.format(key))
         )
 
     return markup
 
 
 @bot.message_handler(commands=CMD_MAPLOT)
-def display_ma_keyboard(message):
-    msg = bot.send_message(chat_id=message.chat.id,
-                     text='Choose one index',
-                     reply_markup=makeMAKeyboard(),
-                     parse_mode='HTML')
+def display_ma_us_keyboard(message):
+    msg = bot.send_message(
+        chat_id=message.chat.id,
+        text='Choose one index',
+        reply_markup=makeMAUSKeyboard(),
+        parse_mode='HTML'
+    )
     bot.register_next_step_handler(msg, handle_maplot_callback_query)
 
 
@@ -269,12 +270,10 @@ def handling_stockinfo_message(message):
             data_enddate=results['data_enddate']
         )
 
-    bot.reply_to(message, message_text)
-
     if splitted_message[0] == '/stockg':
         plot_info = asyncio.run(get_plots_infos(symbol, startdate, enddate, plotinfo_api_url))
         f = urllib.request.urlopen(plot_info['plot']['url'])
-        bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
+        bot.send_photo(message.chat.id, f, caption=message_text, reply_to_message_id=message.id)
         return {
             'message': message_text,
             'result': results,
@@ -284,13 +283,14 @@ def handling_stockinfo_message(message):
         dayswindow = [50] if splitted_message[0] == '/stockgma50' else [200]
         plot_info = asyncio.run(get_ma_plots_info(symbol, startdate, enddate, dayswindow, maplotinfo_api_url))
         f = urllib.request.urlopen(plot_info['plot']['url'])
-        bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
+        bot.send_photo(message.chat.id, f, caption=message_text, reply_to_message_id=message.id)
         return {
             'message': message_text,
             'result': results,
             'ploturl': plot_info['plot']['url']
         }
     else:
+        bot.reply_to(message, message_text)
         return {
             'message': message_text,
             'result': results,
@@ -410,16 +410,16 @@ def handle_maplot_callback_query(call):
     if isinstance(call, telebot.types.CallbackQuery):
         callbackstr = call.data
 
-        if callbackstr == 'button_maplot_sp500':
+        if callbackstr == 'button_maplot_us_sp500':
             index = '^GSPC'
             plottitle = 'S&P 500 (^GSPC)'
-        elif callbackstr == 'button_maplot_nasdaq':
+        elif callbackstr == 'button_maplot_us_nasdaq':
             index = '^IXIC'
             plottitle = 'NASDAQ (^IXIC)'
-        elif callbackstr == 'button_maplot_dji':
+        elif callbackstr == 'button_maplot_us_dji':
             index = '^DJI'
             plottitle = 'Dow Jones (^DJI)'
-        elif callbackstr == 'button_maplot_russell2000':
+        elif callbackstr == 'button_maplot_us_russell2000':
             index = '^RUT'
             plottitle = 'Russell 2000 (^RUT)'
         else:
@@ -437,6 +437,7 @@ def handle_maplot_callback_query(call):
     else:
         logging.error('Unknown error!')
         print('Unknown error!', file=sys.stderr)
+
 
 @bot.message_handler(commands=CMD_FITLPPL)
 def fit_lppl_bubble_burst(message):
@@ -461,7 +462,51 @@ def fit_lppl_bubble_burst(message):
             crashdate=results['estimated_crash_date']
         )
         bot.reply_to(message, message_text)
-        return {'message': message_text,}
+        return {'message': message_text}
+
+
+def bot_polling():
+    # ispolling = True
+    bot.polling()
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'approach': 'polling'})
+    }
+
+
+def bot_webhook(message):
+    update = telebot.types.Update.de_json(message)
+    logging.info(update)
+    print(update)
+    if update.message is not None:
+        message = update.message
+        try:
+            add_modify_user(message)
+        except AttributeError:
+            pass
+
+        try:
+            bot.process_new_messages([message])
+            print('Processed.')
+            return {
+                'statusCode': 200,
+                'body': json.dumps({'approach': 'webhook'})
+            }
+        except AttributeError:
+            print('Telegram error.', file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
+            return {
+                'statusCode': 200,
+                'body': json.dumps({'approach': 'webhook'})
+            }
+    elif update.callback_query is not None:
+        callback_cmd = update.callback_query.data
+        if callback_cmd.startswith('button_maplot_'):
+            handle_maplot_callback_query(update.callback_query)
+        return {
+            'statusCode': 200,
+            'body': json.dumps({'approach': 'webhook'})
+        }
 
 
 def lambda_handler(event, context):
@@ -469,51 +514,13 @@ def lambda_handler(event, context):
     logging.info(message)
     print(message)
     if message.get('polling', False):
-        ispolling = True
-        bot.polling()
-        return {
-            'statusCode': 200,
-            'body': json.dumps({'approach': 'polling'})
-        }
+        return bot_polling()
     else:
-        update = telebot.types.Update.de_json(message)
-        logging.info(update)
-        print(update)
-        if update.message is not None:
-            message = update.message
-            try:
-                add_modify_user(message)
-            except AttributeError:
-                pass
-
-            try:
-                bot.process_new_messages([message])
-                print('Processed.')
-                return {
-                    'statusCode': 200,
-                    'body': json.dumps({'approach': 'webhook'})
-                }
-            except AttributeError:
-                print('Telegram error.', file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
-                return {
-                    'statusCode': 200,
-                    'body': json.dumps({'approach': 'webhook'})
-                }
-        elif update.callback_query is not None:
-            callback_cmd = update.callback_query.data
-            if callback_cmd.startswith('button_maplot_'):
-                handle_maplot_callback_query(update.callback_query)
-            return {
-                'statusCode': 200,
-                'body': json.dumps({'approach': 'webhook'})
-            }
-
+        return bot_webhook(message)
 
 
 if __name__ == '__main__':
-    ispolling = True
-    bot.polling()
+    _ = bot_polling()
 
 # Reference: how to set up webhook: https://aws.plainenglish.io/develop-your-telegram-chatbot-with-aws-api-gateway-dynamodb-lambda-functions-410dcb1fb58a
 ## Time out message: {    "message": "Endpoint request timed out"}

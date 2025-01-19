@@ -109,7 +109,7 @@ def display_ma_us_keyboard(message):
         reply_markup=makeMAUSKeyboard(),
         parse_mode='HTML'
     )
-    bot.register_next_step_handler(msg, handle_maplot_callback_query)
+    bot.register_next_step_handler(msg, handle_us_maplot_callback_query)
 
 
 @bot.message_handler(commands=CMD_START)
@@ -159,7 +159,7 @@ def handling_tips_command(message):
     logging.info(message)
     print(message)
 
-    splitted_message = re.sub('\s+', ' ', message.text).split(' ')
+    splitted_message = re.sub(r'\s+', ' ', message.text).split(' ')
     stringlists = splitted_message[1:]
     if len(stringlists) <= 0:
         bot.reply_to(message, 'No information provided!')
@@ -208,7 +208,7 @@ def handling_stockinfo_message(message):
     logging.info(message)
     print(message)
 
-    splitted_message = re.sub('\s+', ' ', message.text).split(' ')
+    splitted_message = re.sub(r'\s+', ' ', message.text).split(' ')
     stringlists = splitted_message[1:]
     if len(stringlists) <= 0:
         bot.reply_to(message, 'No stock symbol provided.')
@@ -302,7 +302,7 @@ def handling_stockcorrelation_message(message):
     logging.info(message)
     print(message)
 
-    stringlists = re.sub('\s+', ' ', message.text).split(' ')[1:]
+    stringlists = re.sub(r'\s+', ' ', message.text).split(' ')[1:]
     if len(stringlists) <= 1:
         bot.reply_to(message, 'Not enough stock symbols provided (at least 2).')
         return {'message': 'Not enough stock symbols provided (at least 2).'}
@@ -384,7 +384,7 @@ def sending_index_ma(message):
     logging.info(message)
     print(message)
 
-    splitted_message = re.sub('\s+', ' ', message.text).split(' ')
+    splitted_message = re.sub(r'\s+', ' ', message.text).split(' ')
     if splitted_message[0] == '/sp500ma':
         index = '^GSPC'
         plottitle = 'S&P 500 (^GSPC)'
@@ -405,7 +405,7 @@ def sending_index_ma(message):
     }
 
 
-def handle_maplot_callback_query(call):
+def handle_us_maplot_callback_query(call):
     print('handling button')
     if isinstance(call, telebot.types.CallbackQuery):
         callbackstr = call.data
@@ -444,7 +444,7 @@ def fit_lppl_bubble_burst(message):
     logging.info(message)
     print(message)
 
-    stringlists = re.sub('\s+', ' ', message.text).split(' ')[1:]
+    stringlists = re.sub(r'\s+', ' ', message.text).split(' ')[1:]
     symbol = '^GSPC' if len(stringlists) < 1 else stringlists[0]
     startdate = (datetime.today() - timedelta(days=365)).strftime('%Y-%m-%d') if len(stringlists) < 2 else stringlists[1]
     enddate = datetime.today().strftime('%Y-%m-%d') if len(stringlists) < 3 else stringlists[2]
@@ -502,7 +502,7 @@ def bot_webhook(message):
     elif update.callback_query is not None:
         callback_cmd = update.callback_query.data
         if callback_cmd.startswith('button_maplot_'):
-            handle_maplot_callback_query(update.callback_query)
+            handle_us_maplot_callback_query(update.callback_query)
         return {
             'statusCode': 200,
             'body': json.dumps({'approach': 'webhook'})

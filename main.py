@@ -217,7 +217,7 @@ def handling_stockinfo_message(message):
     # find dates
     finddates_ls = [
         i
-        for i, item in enumerate(map(lambda s: re.match('\d\d\d\d-[01]\d-\d\d', s), stringlists))
+        for i, item in enumerate(map(lambda s: re.match(r'\d\d\d\d-[01]\d-\d\d', s), stringlists))
         if item is not None
     ]
     if len(finddates_ls) == 0:
@@ -310,7 +310,7 @@ def handling_stockcorrelation_message(message):
     # find dates
     finddates_ls = [
         i
-        for i, item in enumerate(map(lambda s: re.match('\d\d\d\d-[01]\d-\d\d', s), stringlists))
+        for i, item in enumerate(map(lambda s: re.match(r'\d\d\d\d-[01]\d-\d\d', s), stringlists))
         if item is not None
     ]
     if len(finddates_ls) == 0:

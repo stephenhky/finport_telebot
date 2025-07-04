@@ -11,7 +11,6 @@ import traceback
 import sys
 
 from dotenv import load_dotenv
-import numpy as np
 import telebot
 import boto3
 
@@ -262,10 +261,10 @@ def handling_stockinfo_message(message):
         message_text = open(os.path.join('messagetemplates', 'stockinfo.txt')).read().format(
             symbol=symbol,
             r=results['r'],
-            vol=results['vol'],
+            vol=results['volatility'],
             downside_risk=results['downside_risk'],
             upside_risk=results['upside_risk'],
-            beta=results['beta'] if results['beta'] is not None else np.nan,
+            beta=results['beta'] if results['beta'] is not None else '---',
             data_startdate=results['data_startdate'],
             data_enddate=results['data_enddate']
         )
@@ -361,7 +360,7 @@ def handling_stockcorrelation_message(message):
             vol1=results['std1'],
             r2=results['r2'],
             vol2=results['std2'],
-            cov=results['cov'],
+            cov=results['covariance'],
             corr=results['correlation'],
             data_startdate=startdate,
             data_enddate=enddate
@@ -371,11 +370,11 @@ def handling_stockcorrelation_message(message):
     return {'message': message_text, 'result': results}
 
 
-def plotting_index_ma(index, plottitle):
+def plotting_index_ma(index):
     enddate = date.today().strftime('%Y-%m-%d')
     startdate = (date.today() - relativedelta(years=1)).strftime('%Y-%m-%d')
     plot_info = asyncio.run(
-        get_ma_plots_info(index, startdate, enddate, [50, 200], maplotinfo_api_url, title=plottitle))
+        get_ma_plots_info(index, startdate, enddate, [50, 200], maplotinfo_api_url))
     return plot_info
 
 
@@ -397,7 +396,7 @@ def sending_index_ma(message):
     else:
         return {}
 
-    plot_info = plotting_index_ma(index, plottitle)
+    plot_info = plotting_index_ma(index)
     f = urllib.request.urlopen(plot_info['plot']['url'])
     bot.send_photo(message.chat.id, f, reply_to_message_id=message.id)
     return {
@@ -426,7 +425,7 @@ def handle_us_maplot_callback_query(call):
             return {}
 
         print('plotting moving average for {}'.format(index))
-        plot_info = plotting_index_ma(index, plottitle)
+        plot_info = plotting_index_ma(index)
         f = urllib.request.urlopen(plot_info['plot']['url'])
         bot.send_photo(call.from_user.id, f)
         return {
